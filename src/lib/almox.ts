@@ -373,35 +373,38 @@ export function parseCsv(text: string): CsvResult {
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean);
-  if (!lines.length) return { records: [], errors: ["Arquivo vazio."] };
+  const header = lines[0] ?? "";
+  if (!header) return { records: [], errors: ["Arquivo vazio."] };
 
-  const delimiter = (lines[0].match(/;/g)?.length ?? 0) >= (lines[0].match(/,/g)?.length ?? 0) ? ";" : ",";
-  const start = /mes|m[êe]s/i.test(lines[0]) ? 1 : 0;
+  const delimiter =
+    (header.match(/;/g)?.length ?? 0) >= (header.match(/,/g)?.length ?? 0) ? ";" : ",";
+  const start = /mes|m[êe]s/i.test(header) ? 1 : 0;
   const records: MonthlyRecord[] = [];
 
   for (let i = start; i < lines.length; i++) {
-    const cols = lines[i].split(delimiter);
+    const cols = (lines[i] ?? "").split(delimiter);
     if (cols.length < 9) {
       errors.push(`Linha ${i + 1}: esperadas 9 colunas, encontradas ${cols.length}.`);
       continue;
     }
-    const month = cols[0].trim();
+    const month = (cols[0] ?? "").trim();
     if (!/^\d{4}-\d{2}$/.test(month)) {
       errors.push(`Linha ${i + 1}: mês "${month}" inválido (use AAAA-MM).`);
       continue;
     }
     records.push({
       month,
-      totalValue: num(cols[1]),
-      deadStockValue: num(cols[2]),
-      inventoryLossValue: num(cols[3]),
-      otif: num(cols[4]),
-      avgFulfillmentMinutes: num(cols[5]),
-      accuracy: num(cols[6]),
-      criticalItemsCount: num(cols[7]),
-      stockouts: num(cols[8]),
+      totalValue: num(cols[1] ?? ""),
+      deadStockValue: num(cols[2] ?? ""),
+      inventoryLossValue: num(cols[3] ?? ""),
+      otif: num(cols[4] ?? ""),
+      avgFulfillmentMinutes: num(cols[5] ?? ""),
+      accuracy: num(cols[6] ?? ""),
+      criticalItemsCount: num(cols[7] ?? ""),
+      stockouts: num(cols[8] ?? ""),
     });
   }
+
   return { records, errors };
 }
 
