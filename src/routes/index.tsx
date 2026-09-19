@@ -72,11 +72,13 @@ function Dashboard() {
   const sorted = useMemo(() => sortRecords(data.records), [data.records]);
 
   useEffect(() => {
-    if (!sorted.length) return;
+    const last = sorted[sorted.length - 1];
+    if (!last) return;
     if (!month || !sorted.some((r) => r.month === month)) {
-      setMonth(sorted[sorted.length - 1].month);
+      setMonth(last.month);
     }
   }, [sorted, month]);
+
 
   const current = sorted.find((r) => r.month === month) ?? sorted[sorted.length - 1];
   const previous = current ? previousOf(data.records, current.month) : undefined;
