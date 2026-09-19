@@ -165,23 +165,29 @@ export const STATUS_LABEL: Record<Status, string> = {
   critico: "Fora da meta",
 };
 
-export function variation(current: number, previous?: number) {
+export function variation(current: number, previous?: number | undefined) {
   if (previous === undefined || previous === null || previous === 0) return null;
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
+function monthDate(month: MonthKey) {
+  const parts = month.split("-");
+  const y = Number(parts[0] ?? "1970");
+  const m = Number(parts[1] ?? "1");
+  return new Date(y, (m || 1) - 1, 1);
+}
+
 export function monthLabel(month: MonthKey) {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, (m || 1) - 1, 1);
-  return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
+  return monthDate(month)
+    .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
+    .replace(".", "");
 }
 
 export function monthLabelLong(month: MonthKey) {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, (m || 1) - 1, 1);
-  const s = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const s = monthDate(month).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
 
 export function emptyRecord(month: MonthKey): MonthlyRecord {
   return {
