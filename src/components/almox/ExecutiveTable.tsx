@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   current: MonthlyRecord;
-  previous?: MonthlyRecord;
+  previous?: MonthlyRecord | undefined;
   targets: Targets;
 }
+
 
 export function ExecutiveTable({ current, previous, targets }: Props) {
   return (

@@ -13,11 +13,12 @@ import { cn } from "@/lib/utils";
 interface Props {
   metric: MetricDef;
   value: number;
-  previous?: number;
+  previous?: number | undefined;
   target: number;
-  extra?: string;
-  compact?: boolean;
+  extra?: string | undefined;
+  compact?: boolean | undefined;
 }
+
 
 export function KpiCard({ metric, value, previous, target, extra, compact }: Props) {
   const status: Status = statusOf(value, target, metric.direction);
