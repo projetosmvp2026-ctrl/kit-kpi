@@ -2,13 +2,33 @@ import { useCallback, useEffect, useState } from "react";
 import {
   type AlmoxData,
   type CriticalItem,
+  type DelayReason,
+  type FlowStage,
   type MonthlyRecord,
   type Targets,
+  DEFAULT_DELAY_REASONS,
+  DEFAULT_STAGES,
+  DEFAULT_TARGETS,
+  normalizeRecord,
   seedData,
   sortRecords,
 } from "@/lib/almox";
 
 const STORAGE_KEY = "almoxarifado-kpis-v1";
+
+function hydrate(raw: string): AlmoxData | null {
+  const parsed = JSON.parse(raw) as Partial<AlmoxData>;
+  if (!parsed?.records?.length) return null;
+  return {
+    records: sortRecords(parsed.records.map((r) => normalizeRecord(r))),
+    targets: { ...DEFAULT_TARGETS, ...(parsed.targets ?? {}) },
+    criticalItems: parsed.criticalItems ?? [],
+    stages: parsed.stages?.length ? parsed.stages : DEFAULT_STAGES.map((s) => ({ ...s })),
+    delayReasons: parsed.delayReasons?.length
+      ? parsed.delayReasons
+      : DEFAULT_DELAY_REASONS.map((r) => ({ ...r })),
+  };
+}
 
 export function useAlmoxData() {
   const [data, setData] = useState<AlmoxData>(() => seedData());
@@ -18,8 +38,8 @@ export function useAlmoxData() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as AlmoxData;
-        if (parsed?.records?.length) setData(parsed);
+        const next = hydrate(raw);
+        if (next) setData(next);
       }
     } catch {
       /* ignora armazenamento indisponível */
@@ -63,6 +83,14 @@ export function useAlmoxData() {
     setData((d) => ({ ...d, criticalItems }));
   }, []);
 
+  const setStages = useCallback((stages: FlowStage[]) => {
+    setData((d) => ({ ...d, stages }));
+  }, []);
+
+  const setDelayReasons = useCallback((delayReasons: DelayReason[]) => {
+    setData((d) => ({ ...d, delayReasons }));
+  }, []);
+
   const reset = useCallback(() => setData(seedData()), []);
 
   return {
@@ -73,6 +101,8 @@ export function useAlmoxData() {
     removeRecord,
     setTargets,
     setCriticalItems,
+    setStages,
+    setDelayReasons,
     reset,
   };
 }
