@@ -179,7 +179,7 @@ function Dashboard() {
     deadStockValue: `${deadPct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% do estoque total`,
     inventoryLossValue: "Ajuste de inventário acumulado no mês",
     criticalItemsCount:
-      current.criticalItemsCount > (data.targets.criticalItemsCount ?? 0)
+      current.criticalItemsCount > (data.targets["criticalItemsCount"] ?? 0)
         ? "Reposição urgente exigida"
         : "Dentro do limite tolerado",
     stockouts: `${current.stockouts} ocorrência(s) de falta`,

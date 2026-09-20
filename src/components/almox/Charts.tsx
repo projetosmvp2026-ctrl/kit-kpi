@@ -175,13 +175,13 @@ export function QualityChart({
             ]}
           />
           <ReferenceLine
-            y={targets.accuracy}
+            y={targets["accuracy"] ?? 0}
             stroke="var(--color-chart-3)"
             strokeDasharray="4 4"
             strokeOpacity={0.6}
           />
           <ReferenceLine
-            y={targets.otif}
+            y={targets["otif"] ?? 0}
             stroke="var(--color-chart-2)"
             strokeDasharray="4 4"
             strokeOpacity={0.6}

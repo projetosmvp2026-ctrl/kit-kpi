@@ -79,7 +79,7 @@ export function CollectionsVolumeChart({
           />
           <ReferenceLine
             yAxisId="pct"
-            y={targets.collectionsSlaPct ?? 95}
+            y={targets["collectionsSlaPct"] ?? 95}
             stroke="var(--color-chart-3)"
             strokeDasharray="4 4"
             strokeOpacity={0.6}
