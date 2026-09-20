@@ -19,12 +19,15 @@ interface Props {
   compact?: boolean | undefined;
 }
 
-
 export function KpiCard({ metric, value, previous, target, extra, compact }: Props) {
   const status: Status = statusOf(value, target, metric.direction);
   const varPct = variation(value, previous);
   const improving =
-    varPct === null ? null : metric.direction === "up" ? varPct >= 0 : varPct <= 0;
+    varPct === null || metric.direction === "info"
+      ? null
+      : metric.direction === "up"
+        ? varPct >= 0
+        : varPct <= 0;
 
   return (
     <div
@@ -49,6 +52,12 @@ export function KpiCard({ metric, value, previous, target, extra, compact }: Pro
         {formatMetric(metric.unit, value)}
       </p>
 
+      {metric.formula ? (
+        <p className="rounded-md bg-surface-2/70 px-2 py-1 text-[0.7rem] text-accent">
+          {metric.formula}
+        </p>
+      ) : null}
+
       {extra ? <p className="text-xs text-muted-foreground">{extra}</p> : null}
 
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs">
@@ -60,9 +69,11 @@ export function KpiCard({ metric, value, previous, target, extra, compact }: Pro
         >
           {STATUS_LABEL[status]}
         </span>
-        <span className="tabular text-muted-foreground">
-          Meta {formatMetric(metric.unit, target)}
-        </span>
+        {metric.direction !== "info" && (
+          <span className="tabular text-muted-foreground">
+            Meta {formatMetric(metric.unit, target)}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 text-xs">
@@ -74,7 +85,11 @@ export function KpiCard({ metric, value, previous, target, extra, compact }: Pro
           <span
             className={cn(
               "tabular inline-flex items-center gap-1 font-medium",
-              improving ? statusText.ok : statusText.critico,
+              improving === null
+                ? "text-muted-foreground"
+                : improving
+                  ? statusText.ok
+                  : statusText.critico,
             )}
           >
             {varPct >= 0 ? (

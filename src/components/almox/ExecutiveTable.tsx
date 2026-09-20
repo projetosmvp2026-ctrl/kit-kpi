@@ -1,9 +1,11 @@
 import {
+  GROUP_LABEL,
   METRICS,
   type MonthlyRecord,
   type Targets,
   STATUS_LABEL,
   formatMetric,
+  metricValue,
   monthLabelLong,
   statusOf,
   variation,
@@ -17,7 +19,6 @@ interface Props {
   targets: Targets;
 }
 
-
 export function ExecutiveTable({ current, previous, targets }: Props) {
   return (
     <div className="panel overflow-hidden">
@@ -29,10 +30,11 @@ export function ExecutiveTable({ current, previous, targets }: Props) {
         </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[46rem] text-sm">
+        <table className="w-full min-w-[50rem] text-sm">
           <thead>
             <tr className="text-left text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-              <th className="px-5 py-3 font-medium">Indicador</th>
+              <th className="px-5 py-3 font-medium">Bloco</th>
+              <th className="px-3 py-3 font-medium">Indicador</th>
               <th className="px-3 py-3 text-right font-medium">Mês atual</th>
               <th className="px-3 py-3 text-right font-medium">Mês anterior</th>
               <th className="px-3 py-3 text-right font-medium">Meta</th>
@@ -42,18 +44,27 @@ export function ExecutiveTable({ current, previous, targets }: Props) {
           </thead>
           <tbody>
             {METRICS.map((m) => {
-              const v = current[m.key];
-              const p = previous?.[m.key];
-              const t = targets[m.key];
+              const v = metricValue(current, m);
+              const p = previous ? metricValue(previous, m) : undefined;
+              const t = targets[m.key] ?? 0;
               const st = statusOf(v, t, m.direction);
               const varPct = variation(v, p);
               const improving =
-                varPct === null ? null : m.direction === "up" ? varPct >= 0 : varPct <= 0;
+                varPct === null || m.direction === "info"
+                  ? null
+                  : m.direction === "up"
+                    ? varPct >= 0
+                    : varPct <= 0;
               return (
                 <tr key={m.key} className="border-t border-border/70">
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3 text-xs uppercase tracking-[0.1em] text-muted-foreground">
+                    {GROUP_LABEL[m.group]}
+                  </td>
+                  <td className="px-3 py-3">
                     <span className="font-medium">{m.label}</span>
-                    <span className="block text-xs text-muted-foreground">{m.help}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {m.formula ? `${m.formula} · ${m.help}` : m.help}
+                    </span>
                   </td>
                   <td className="tabular px-3 py-3 text-right font-semibold">
                     {formatMetric(m.unit, v)}
@@ -62,7 +73,7 @@ export function ExecutiveTable({ current, previous, targets }: Props) {
                     {p === undefined ? "—" : formatMetric(m.unit, p)}
                   </td>
                   <td className="tabular px-3 py-3 text-right text-muted-foreground">
-                    {formatMetric(m.unit, t)}
+                    {m.direction === "info" ? "—" : formatMetric(m.unit, t)}
                   </td>
                   <td
                     className={cn(

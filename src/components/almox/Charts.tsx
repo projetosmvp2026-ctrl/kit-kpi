@@ -21,14 +21,14 @@ import {
   monthLabel,
 } from "@/lib/almox";
 
-const axis = {
+export const axis = {
   stroke: "var(--color-muted-foreground)",
   fontSize: 11,
   tickLine: false,
   axisLine: false,
 };
 
-const tooltipStyle = {
+export const tooltipStyle = {
   contentStyle: {
     background: "var(--color-surface-2)",
     border: "1px solid var(--color-border)",
@@ -39,7 +39,7 @@ const tooltipStyle = {
   labelStyle: { color: "var(--color-muted-foreground)" },
 };
 
-function ChartShell({
+export function ChartShell({
   title,
   subtitle,
   legend,
@@ -64,7 +64,7 @@ function ChartShell({
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+export function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
       <span className="size-2.5 rounded-sm" style={{ background: color }} aria-hidden />
@@ -175,13 +175,13 @@ export function QualityChart({
             ]}
           />
           <ReferenceLine
-            y={targets.accuracy}
+            y={targets["accuracy"] ?? 0}
             stroke="var(--color-chart-3)"
             strokeDasharray="4 4"
             strokeOpacity={0.6}
           />
           <ReferenceLine
-            y={targets.otif}
+            y={targets["otif"] ?? 0}
             stroke="var(--color-chart-2)"
             strokeDasharray="4 4"
             strokeOpacity={0.6}
