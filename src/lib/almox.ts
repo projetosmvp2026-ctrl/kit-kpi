@@ -57,6 +57,9 @@ export interface AlmoxData {
   criticalItems: CriticalItem[];
   stages: FlowStage[];
   delayReasons: DelayReason[];
+  obras: import("./obras").Obra[];
+  movements: import("./obras").Movement[];
+  purchaseOrders: import("./obras").PurchaseOrder[];
 }
 
 export type MetricUnit = "BRL" | "PERCENT" | "MIN" | "HOUR" | "COUNT";

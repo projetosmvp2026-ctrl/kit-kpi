@@ -13,6 +13,8 @@ import {
   seedData,
   sortRecords,
 } from "@/lib/almox";
+import { DEFAULT_OBRAS, type Movement, type Obra, type PurchaseOrder } from "@/lib/obras";
+import { emptyRecord } from "@/lib/almox";
 
 const STORAGE_KEY = "almoxarifado-kpis-v1";
 
@@ -27,6 +29,9 @@ function hydrate(raw: string): AlmoxData | null {
     delayReasons: parsed.delayReasons?.length
       ? parsed.delayReasons
       : DEFAULT_DELAY_REASONS.map((r) => ({ ...r })),
+    obras: parsed.obras?.length ? parsed.obras : DEFAULT_OBRAS.map((o) => ({ ...o })),
+    movements: parsed.movements ?? [],
+    purchaseOrders: parsed.purchaseOrders ?? [],
   };
 }
 
@@ -91,6 +96,43 @@ export function useAlmoxData() {
     setData((d) => ({ ...d, delayReasons }));
   }, []);
 
+  const setObras = useCallback((obras: Obra[]) => {
+    setData((d) => ({ ...d, obras }));
+  }, []);
+
+  const addMovements = useCallback((list: Movement[]) => {
+    setData((d) => {
+      const map = new Map(d.movements.map((m) => [m.nf, m]));
+      for (const m of list) map.set(m.nf, m);
+      return { ...d, movements: [...map.values()] };
+    });
+  }, []);
+
+  const clearMovements = useCallback((month?: string) => {
+    setData((d) => ({ ...d, movements: month ? d.movements.filter((m) => m.month !== month) : [] }));
+  }, []);
+
+  /** Registra pedidos de compra e atualiza coletas solicitadas/urgentes de cada mês. */
+  const addPurchaseOrders = useCallback((list: PurchaseOrder[]) => {
+    setData((d) => {
+      const map = new Map(d.purchaseOrders.map((p) => [p.number, p]));
+      for (const p of list) map.set(p.number, p);
+      const purchaseOrders = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+      const months = new Set(list.map((p) => p.month));
+      const recs = new Map(d.records.map((r) => [r.month, r]));
+      for (const m of months) {
+        const pos = purchaseOrders.filter((p) => p.month === m);
+        const base = recs.get(m) ?? emptyRecord(m);
+        recs.set(m, {
+          ...base,
+          collectionsRequested: pos.length,
+          collectionsUrgent: pos.filter((p) => p.urgent).length,
+        });
+      }
+      return { ...d, purchaseOrders, records: sortRecords([...recs.values()]) };
+    });
+  }, []);
+
   const reset = useCallback(() => setData(seedData()), []);
 
   return {
@@ -103,6 +145,10 @@ export function useAlmoxData() {
     setCriticalItems,
     setStages,
     setDelayReasons,
+    setObras,
+    addMovements,
+    clearMovements,
+    addPurchaseOrders,
     reset,
   };
 }
