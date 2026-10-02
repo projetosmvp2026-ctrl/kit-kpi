@@ -1,0 +1,3 @@
+- [ ] Devoluções + compras emergenciais
+- [ ] Gráfico por obra no painel
+- [ ] Visual premium minimalista dos indicadores
