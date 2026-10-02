@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus, Pencil } from "lucide-react";
 import {
   type MetricDef,
   type Status,
@@ -7,7 +7,7 @@ import {
   statusOf,
   variation,
 } from "@/lib/almox";
-import { statusChip, statusDot, statusRing, statusText } from "./status";
+import { statusDot, statusText } from "./status";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -17,9 +17,10 @@ interface Props {
   target: number;
   extra?: string | undefined;
   compact?: boolean | undefined;
+  onEdit?: (() => void) | undefined;
 }
 
-export function KpiCard({ metric, value, previous, target, extra, compact }: Props) {
+export function KpiCard({ metric, value, previous, target, extra, compact, onEdit }: Props) {
   const status: Status = statusOf(value, target, metric.direction);
   const varPct = variation(value, previous);
   const improving =
@@ -32,43 +33,41 @@ export function KpiCard({ metric, value, previous, target, extra, compact }: Pro
   return (
     <div
       className={cn(
-        "panel relative flex flex-col gap-3 overflow-hidden p-5 transition-colors",
-        statusRing[status],
-        compact && "gap-2 p-4",
+        "group relative flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/40 p-6 transition-colors hover:border-border",
+        compact && "gap-3 p-5",
       )}
     >
-      <span
-        className={cn("absolute inset-x-0 top-0 h-[3px]", statusDot[status], "opacity-80")}
-        aria-hidden
-      />
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[0.72rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
           {metric.label}
         </p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Editar ${metric.label}`}
+            className="ml-auto rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
         <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", statusDot[status])} aria-hidden />
       </div>
 
-      <p className={cn("tabular font-display text-3xl font-semibold", compact && "text-2xl")}>
+      <p className={cn("tabular font-display text-4xl font-light tracking-tight", compact && "text-3xl")}>
         {formatMetric(metric.unit, value)}
       </p>
 
       {metric.formula ? (
-        <p className="rounded-md bg-surface-2/70 px-2 py-1 text-[0.7rem] text-accent">
+        <p className="text-[0.7rem] text-muted-foreground/80">
           {metric.formula}
         </p>
       ) : null}
 
       {extra ? <p className="text-xs text-muted-foreground">{extra}</p> : null}
 
-      <div className="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs">
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium",
-            statusChip[status],
-          )}
-        >
-          {STATUS_LABEL[status]}
-        </span>
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3 text-xs">
+        <span className={cn("font-medium", statusText[status])}>{STATUS_LABEL[status]}</span>
         {metric.direction !== "info" && (
           <span className="tabular text-muted-foreground">
             Meta {formatMetric(metric.unit, target)}

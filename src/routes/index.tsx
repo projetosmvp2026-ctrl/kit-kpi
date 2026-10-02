@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  ShoppingCart,
   Download,
   FileSpreadsheet,
   Maximize2,
@@ -31,6 +32,8 @@ import {
   CollectionsVolumeChart,
   DelayReasonsChart,
 } from "@/components/almox/CollectionsCharts";
+import { ObraMovementChart } from "@/components/almox/ObraMovementChart";
+import { rankObras } from "@/lib/obras";
 import { FlowStages } from "@/components/almox/FlowStages";
 import { DataEntryDialog } from "@/components/almox/DataEntryDialog";
 import { ImportDialog } from "@/components/almox/ImportDialog";
@@ -191,6 +194,9 @@ function Dashboard() {
     collectionsSlaPct: `${current.collectionsOnTime} de ${current.collectionsCompleted} coletas no prazo`,
     collectionsAvgHours: `≈ ${(current.collectionsAvgHours / 24).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} dia(s) da solicitação à coleta`,
     collectionsUrgent: "Atendimentos fora do planejamento",
+    returnsCount: `${brl(current.returnsValue)} devolvidos`,
+    returnsValue: current.returnsCount ? `Média de ${brl(current.returnsValue / current.returnsCount)} por devolução` : "Sem devoluções",
+    emergencyPurchases: current.collectionsRequested ? `${((current.emergencyPurchases / current.collectionsRequested) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% dos pedidos do mês` : "Lidos dos pedidos do WhatsApp",
   };
 
   const renderBlock = (group: MetricGroup) => (
@@ -207,6 +213,7 @@ function Dashboard() {
             previous={previous ? metricValue(previous, m) : undefined}
             target={data.targets[m.key] ?? 0}
             extra={extras[m.key]}
+                onEdit={presenting ? undefined : () => setEntryOpen(true)}
             compact
           />
         ))}
@@ -275,6 +282,9 @@ function Dashboard() {
                 >
                   <Download className="size-4" /> Exportar mês
                 </Button>
+                <Button variant="secondary" asChild>
+                  <Link to="/admin">Painel adm</Link>
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -339,6 +349,29 @@ function Dashboard() {
                 previous={previous ? metricValue(previous, m) : undefined}
                 target={data.targets[m.key] ?? 0}
                 extra={extras[m.key]}
+                onEdit={presenting ? undefined : () => setEntryOpen(true)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3" aria-label="Indicadores de compras">
+          <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+            <span className="grid size-8 place-items-center rounded-lg bg-primary/15 text-primary">
+              <ShoppingCart className="size-4" />
+            </span>
+            Devoluções e Compras Emergenciais
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {METRICS.filter((m) => m.group === "compras").map((m) => (
+              <KpiCard
+                key={m.key}
+                metric={m}
+                value={metricValue(current, m)}
+                previous={previous ? metricValue(previous, m) : undefined}
+                target={data.targets[m.key] ?? 0}
+                extra={extras[m.key]}
+                onEdit={presenting ? undefined : () => setEntryOpen(true)}
               />
             ))}
           </div>
@@ -354,6 +387,12 @@ function Dashboard() {
             <QualityChart records={history} targets={data.targets} />
             <CollectionsVolumeChart records={history} targets={data.targets} />
             <DelayReasonsChart reasons={data.delayReasons} />
+            <div className="xl:col-span-2">
+              <ObraMovementChart
+                ranking={rankObras(data.obras, data.movements, current.month)}
+                subtitle={`Notas de remessa de ${monthLabelLong(current.month)} — obras com mais movimentações`}
+              />
+            </div>
             <div className="xl:col-span-2">
               <CriticalItemsChart items={data.criticalItems} />
             </div>
