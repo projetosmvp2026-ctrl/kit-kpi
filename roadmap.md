@@ -1,4 +1,4 @@
-- [ ] Devoluções + compras emergenciais
-- [ ] Gráfico por obra no painel
-- [ ] Visual premium minimalista dos indicadores
-- [ ] Botão editar em cada indicador + acesso ao painel adm
+- [x] Devoluções + compras emergenciais
+- [x] Gráfico por obra no painel
+- [x] Visual premium minimalista dos indicadores
+- [x] Botão editar em cada indicador + acesso ao painel adm
