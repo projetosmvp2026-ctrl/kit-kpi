@@ -127,6 +127,7 @@ export function useAlmoxData() {
           ...base,
           collectionsRequested: pos.length,
           collectionsUrgent: pos.filter((p) => p.urgent).length,
+          emergencyPurchases: pos.filter((p) => p.urgent).length,
         });
       }
       return { ...d, purchaseOrders, records: sortRecords([...recs.values()]) };

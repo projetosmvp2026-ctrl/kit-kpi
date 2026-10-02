@@ -22,6 +22,10 @@ export interface MonthlyRecord {
   collectionsLate: number;
   collectionsAvgHours: number;
   collectionsUrgent: number;
+  /* Compras */
+  returnsCount: number; // devoluções de material comprado
+  returnsValue: number; // R$ devolvido
+  emergencyPurchases: number; // pedidos de compra emergenciais
 }
 
 export type MetricField = keyof Omit<MonthlyRecord, "month">;
@@ -63,7 +67,7 @@ export interface AlmoxData {
 }
 
 export type MetricUnit = "BRL" | "PERCENT" | "MIN" | "HOUR" | "COUNT";
-export type MetricGroup = "estoque" | "atendimento" | "controle" | "risco" | "coletas";
+export type MetricGroup = "estoque" | "atendimento" | "controle" | "risco" | "coletas" | "compras";
 
 export interface MetricDef {
   key: string;
@@ -85,6 +89,7 @@ export const GROUP_LABEL: Record<MetricGroup, string> = {
   controle: "Controle",
   risco: "Risco",
   coletas: "Coletas",
+  compras: "Compras",
 };
 
 /** Campos lançados manualmente / via CSV, na ordem do modelo de planilha. */
@@ -112,6 +117,9 @@ export const MONTH_FIELDS: FieldDef[] = [
   { key: "collectionsLate", label: "Coletas Atrasadas", unit: "COUNT", csv: "coletas_atrasadas", group: "coletas" },
   { key: "collectionsAvgHours", label: "Tempo Médio para Realização", unit: "HOUR", csv: "coletas_tempo_medio_h", group: "coletas" },
   { key: "collectionsUrgent", label: "Coletas Urgentes / Emergenciais", unit: "COUNT", csv: "coletas_urgentes", group: "coletas" },
+  { key: "returnsCount", label: "Devoluções de Material Comprado", unit: "COUNT", csv: "devolucoes_qtd", group: "compras" },
+  { key: "returnsValue", label: "Valor Devolvido", unit: "BRL", csv: "devolucoes_valor", group: "compras" },
+  { key: "emergencyPurchases", label: "Pedidos de Compra Emergenciais", unit: "COUNT", csv: "compras_emergenciais", group: "compras" },
 ];
 
 export const collectionsFulfillment = (r: MonthlyRecord) =>
@@ -284,6 +292,36 @@ export const METRICS: MetricDef[] = [
     group: "coletas",
     help: "Volume tratado fora do planejamento normal.",
   },
+  {
+    key: "returnsCount",
+    field: "returnsCount",
+    label: "Devoluções de Material Comprado",
+    short: "Devoluções",
+    unit: "COUNT",
+    direction: "down",
+    group: "compras",
+    help: "Materiais comprados devolvidos ao fornecedor (defeito, erro de pedido, divergência).",
+  },
+  {
+    key: "returnsValue",
+    field: "returnsValue",
+    label: "Valor Devolvido",
+    short: "Valor devolvido",
+    unit: "BRL",
+    direction: "down",
+    group: "compras",
+    help: "Valor total das devoluções de material comprado.",
+  },
+  {
+    key: "emergencyPurchases",
+    field: "emergencyPurchases",
+    label: "Pedidos de Compra Emergenciais",
+    short: "Compras emergenciais",
+    unit: "COUNT",
+    direction: "down",
+    group: "compras",
+    help: "Pedidos fora do planejamento — indicam falha de previsão ou ruptura.",
+  },
 ];
 
 export const METRICS_BY_GROUP = (group: MetricGroup) => METRICS.filter((m) => m.group === group);
@@ -401,9 +439,12 @@ export const DEFAULT_TARGETS: Targets = {
   collectionsLate: 6,
   collectionsSlaPct: 95,
   collectionsAvgHours: 36,
+  returnsCount: 6,
+  returnsValue: 8000,
+  emergencyPurchases: 10,
 };
 
-const SEED_MONTHS: MonthlyRecord[] = [
+const SEED_MONTHS: Omit<MonthlyRecord, "returnsCount" | "returnsValue" | "emergencyPurchases">[] = [
   {
     month: "2026-04",
     totalValue: 2050000,
@@ -542,7 +583,12 @@ export const DEFAULT_DELAY_REASONS: DelayReason[] = [
 
 export function seedData(): AlmoxData {
   return {
-    records: SEED_MONTHS,
+    records: SEED_MONTHS.map((r, i) => ({
+      ...r,
+      returnsCount: [14, 12, 11, 9, 8, 6][i] ?? 0,
+      returnsValue: [21800, 18400, 15200, 12900, 10100, 7600][i] ?? 0,
+      emergencyPurchases: r.collectionsUrgent,
+    })),
     targets: { ...DEFAULT_TARGETS },
     criticalItems: SEED_ITEMS,
     stages: DEFAULT_STAGES.map((s) => ({ ...s })),

@@ -41,7 +41,7 @@ interface Props {
   onSaveFlow: (stages: FlowStage[], reasons: DelayReason[]) => void;
 }
 
-const GROUP_ORDER: MetricGroup[] = ["estoque", "atendimento", "controle", "risco", "coletas"];
+const GROUP_ORDER: MetricGroup[] = ["estoque", "atendimento", "controle", "risco", "coletas", "compras"];
 
 export function DataEntryDialog({
   open,
