@@ -18,6 +18,19 @@ export interface Movement {
   destId: string | null;
   value: number;
   carrier: string;
+  /** Custo do envio (frete) em R$ */
+  freight?: number | undefined;
+  /** Transporte próprio (frota Drilling) ou terceiro (transportadora) */
+  transport?: TransportType | undefined;
+}
+
+export type TransportType = "proprio" | "terceiro";
+export const TRANSPORT_LABEL: Record<TransportType, string> = { proprio: "Próprio", terceiro: "Terceiro" };
+
+export function transportOf(m: Movement): TransportType {
+  if (m.transport) return m.transport;
+  const c = norm(m.carrier ?? "");
+  return !c || c.includes("DRILLING") ? "proprio" : "terceiro";
 }
 
 export interface PurchaseOrder {
@@ -134,6 +147,7 @@ export function parseNfCsv(text: string, month: MonthKey, obras: Obra[]): NfPars
   const iObs = header.findIndex((h) => h === "OBSERVACOES");
   const iVal = col("VALOR TOTAL");
   const iTr = col("TRANSPORTE");
+  const iFr = header.findIndex((h) => h === "FRETE");
   const res: NfParseResult = { accepted: [], rejected: [] };
   if (iNf < 0 || iNat < 0 || iObs < 0) {
     res.rejected.push({ nf: "—", reason: "Cabeçalho do protocolo de notas não reconhecido." });
@@ -169,7 +183,10 @@ export function parseNfCsv(text: string, month: MonthKey, obras: Obra[]): NfPars
       destId: dest.type === "obra" ? dest.obra.id : null,
       value: Number((r[iVal] ?? "0").replace(",", ".")) || 0,
       carrier: iTr >= 0 ? (r[iTr] ?? "").trim() : "",
+      freight: iFr >= 0 ? Number((r[iFr] ?? "0").replace(",", ".")) || 0 : 0,
     });
+    const last = res.accepted[res.accepted.length - 1];
+    if (last) last.transport = transportOf(last);
   }
   return res;
 }
@@ -184,6 +201,11 @@ export interface ObraRank {
   sent: number;
   received: number;
   total: number;
+  costOwn: number;
+  costThird: number;
+  cost: number;
+  tripsOwn: number;
+  tripsThird: number;
 }
 
 export function rankObras(obras: Obra[], movements: Movement[], month?: MonthKey | undefined): ObraRank[] {
@@ -192,7 +214,13 @@ export function rankObras(obras: Obra[], movements: Movement[], month?: MonthKey
     .map((obra) => {
       const sent = list.filter((m) => m.originId === obra.id).length;
       const received = list.filter((m) => m.destId === obra.id).length;
-      return { obra, sent, received, total: sent + received };
+      const mine = list.filter((m) => m.originId === obra.id || m.destId === obra.id);
+      let costOwn = 0, costThird = 0, tripsOwn = 0, tripsThird = 0;
+      for (const m of mine) {
+        const f = m.freight ?? 0;
+        if (transportOf(m) === "proprio") { costOwn += f; tripsOwn++; } else { costThird += f; tripsThird++; }
+      }
+      return { obra, sent, received, total: sent + received, costOwn, costThird, cost: costOwn + costThird, tripsOwn, tripsThird };
     })
     .sort((a, b) => b.total - a.total || a.obra.name.localeCompare(b.obra.name));
 }

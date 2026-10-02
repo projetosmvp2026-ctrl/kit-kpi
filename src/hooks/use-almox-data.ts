@@ -108,6 +108,10 @@ export function useAlmoxData() {
     });
   }, []);
 
+  const updateMovement = useCallback((nf: string, patch: Partial<Movement>) => {
+    setData((d) => ({ ...d, movements: d.movements.map((m) => (m.nf === nf ? { ...m, ...patch } : m)) }));
+  }, []);
+
   const clearMovements = useCallback((month?: string) => {
     setData((d) => ({ ...d, movements: month ? d.movements.filter((m) => m.month !== month) : [] }));
   }, []);
@@ -149,6 +153,7 @@ export function useAlmoxData() {
     setObras,
     addMovements,
     clearMovements,
+    updateMovement,
     addPurchaseOrders,
     reset,
   };
