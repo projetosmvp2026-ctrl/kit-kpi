@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataEntryDialog } from "@/components/almox/DataEntryDialog";
 import { ImportDialog } from "@/components/almox/ImportDialog";
 import { useAlmoxData } from "@/hooks/use-almox-data";
-import { monthLabelLong } from "@/lib/almox";
+import { brl, monthLabelLong } from "@/lib/almox";
+import { transportOf, TRANSPORT_LABEL, type TransportType } from "@/lib/obras";
 import {
   KIND_LABEL,
   type NfParseResult,
@@ -88,7 +89,7 @@ function AdminPage() {
 
 type D = ReturnType<typeof useAlmoxData>;
 
-function NotasTab({ data, addMovements, clearMovements }: D) {
+function NotasTab({ data, addMovements, clearMovements, updateMovement }: D) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [text, setText] = useState("");
@@ -107,6 +108,8 @@ function NotasTab({ data, addMovements, clearMovements }: D) {
   };
 
   const ranking = rankObras(data.obras, data.movements, month).filter((r) => r.total > 0);
+  const monthMoves = data.movements.filter((m) => m.month === month);
+  const obraName = (id: string | null) => (id ? data.obras.find((o) => o.id === id)?.name ?? "—" : "Drilling");
 
   return (
     <div className="space-y-4">
@@ -187,12 +190,53 @@ function NotasTab({ data, addMovements, clearMovements }: D) {
             {ranking.map((r, i) => (
               <li key={r.obra.id} className="flex items-center justify-between py-2">
                 <span><span className="tabular mr-2 text-muted-foreground">{i + 1}º</span>{r.obra.name} <span className="text-muted-foreground">· {r.obra.city}</span></span>
-                <span className="tabular">{r.total} <span className="text-xs text-muted-foreground">({r.received} recebidas / {r.sent} enviadas)</span></span>
+                <span className="tabular text-right">{r.total} <span className="text-xs text-muted-foreground">({r.received} recebidas / {r.sent} enviadas)</span>
+                  <span className="block text-xs text-muted-foreground">Frete {brl(r.cost)} · próprio {brl(r.costOwn)} · terceiro {brl(r.costThird)}</span>
+                </span>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {monthMoves.length > 0 && (
+        <div className="panel p-5">
+          <h2 className="font-display text-lg font-semibold">Custo de envio por nota</h2>
+          <p className="mb-3 text-sm text-muted-foreground">Informe o valor do frete e se o transporte foi próprio ou terceiro. O frete da nota já vem preenchido quando existir no protocolo.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr><th className="py-2">NF</th><th>Origem → Destino</th><th>Transportadora</th><th>Transporte</th><th className="text-right">Frete (R$)</th></tr>
+              </thead>
+              <tbody className="divide-y divide-border/70">
+                {monthMoves.map((m) => (
+                  <tr key={m.nf}>
+                    <td className="tabular py-2">{m.nf}</td>
+                    <td>{obraName(m.originId)} → {obraName(m.destId)}</td>
+                    <td className="text-muted-foreground">{m.carrier || "—"}</td>
+                    <td>
+                      <select
+                        className="rounded-md border border-border bg-background px-2 py-1"
+                        value={transportOf(m)}
+                        onChange={(e) => updateMovement(m.nf, { transport: e.target.value as TransportType })}
+                      >
+                        {(Object.keys(TRANSPORT_LABEL) as TransportType[]).map((t) => <option key={t} value={t}>{TRANSPORT_LABEL[t]}</option>)}
+                      </select>
+                    </td>
+                    <td className="text-right">
+                      <Input
+                        type="number" min={0} step="0.01" className="ml-auto h-8 w-32 text-right"
+                        defaultValue={m.freight ?? 0}
+                        onBlur={(e) => updateMovement(m.nf, { freight: Number(e.target.value) || 0 })}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
