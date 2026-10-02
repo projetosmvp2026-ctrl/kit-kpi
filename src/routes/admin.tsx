@@ -289,7 +289,10 @@ function ObrasTab({ data, setObras }: D) {
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const add = () => {
-    if (!name.trim() || !city.trim()) return toast.error("Informe nome e cidade.");
+    if (!name.trim() || !city.trim()) {
+      toast.error("Informe nome e cidade.");
+      return;
+    }
     const id = `${name}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     setObras([...data.obras, { id, name: name.trim(), city: city.trim() }]);
     setName("");

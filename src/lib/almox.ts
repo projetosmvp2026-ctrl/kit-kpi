@@ -1,3 +1,4 @@
+import { DEFAULT_OBRAS } from "./obras";
 export type MonthKey = string; // "YYYY-MM"
 
 export interface MonthlyRecord {
@@ -589,7 +590,7 @@ export function seedData(): AlmoxData {
       returnsValue: [21800, 18400, 15200, 12900, 10100, 7600][i] ?? 0,
       emergencyPurchases: r.collectionsUrgent,
     })),
-    obras: [],
+    obras: DEFAULT_OBRAS.map((o) => ({ ...o })),
     movements: [],
     purchaseOrders: [],
     targets: { ...DEFAULT_TARGETS },
