@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -213,6 +213,7 @@ function Dashboard() {
             previous={previous ? metricValue(previous, m) : undefined}
             target={data.targets[m.key] ?? 0}
             extra={extras[m.key]}
+                onEdit={presenting ? undefined : () => setEntryOpen(true)}
             compact
           />
         ))}
@@ -281,6 +282,9 @@ function Dashboard() {
                 >
                   <Download className="size-4" /> Exportar mês
                 </Button>
+                <Button variant="secondary" asChild>
+                  <Link to="/admin">Painel adm</Link>
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -345,6 +349,7 @@ function Dashboard() {
                 previous={previous ? metricValue(previous, m) : undefined}
                 target={data.targets[m.key] ?? 0}
                 extra={extras[m.key]}
+                onEdit={presenting ? undefined : () => setEntryOpen(true)}
               />
             ))}
           </div>
@@ -366,6 +371,7 @@ function Dashboard() {
                 previous={previous ? metricValue(previous, m) : undefined}
                 target={data.targets[m.key] ?? 0}
                 extra={extras[m.key]}
+                onEdit={presenting ? undefined : () => setEntryOpen(true)}
               />
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus, Pencil } from "lucide-react";
 import {
   type MetricDef,
   type Status,
@@ -17,9 +17,10 @@ interface Props {
   target: number;
   extra?: string | undefined;
   compact?: boolean | undefined;
+  onEdit?: (() => void) | undefined;
 }
 
-export function KpiCard({ metric, value, previous, target, extra, compact }: Props) {
+export function KpiCard({ metric, value, previous, target, extra, compact, onEdit }: Props) {
   const status: Status = statusOf(value, target, metric.direction);
   const varPct = variation(value, previous);
   const improving =
@@ -32,7 +33,7 @@ export function KpiCard({ metric, value, previous, target, extra, compact }: Pro
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/40 p-6 transition-colors hover:border-border",
+        "group relative flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/40 p-6 transition-colors hover:border-border",
         compact && "gap-3 p-5",
       )}
     >
@@ -40,6 +41,16 @@ export function KpiCard({ metric, value, previous, target, extra, compact }: Pro
         <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
           {metric.label}
         </p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Editar ${metric.label}`}
+            className="ml-auto rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
         <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", statusDot[status])} aria-hidden />
       </div>
 
