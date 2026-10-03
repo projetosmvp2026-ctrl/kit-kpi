@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { ArrowLeft, FileText, PencilLine, Plus, Trash2, Upload, MessageCircle, Building2 } from "lucide-react";
+import { ArrowLeft, FileText, PencilLine, Plus, Trash2, Upload, MessageCircle, Building2, CalendarDays, AlertTriangle, Settings, Download, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataEntryDialog } from "@/components/almox/DataEntryDialog";
 import { ImportDialog } from "@/components/almox/ImportDialog";
 import { useAlmoxData } from "@/hooks/use-almox-data";
-import { brl, monthLabelLong } from "@/lib/almox";
+import { brl, monthLabelLong, type CriticalItem, type CriticalKind } from "@/lib/almox";
 import { transportOf, TRANSPORT_LABEL, type TransportType } from "@/lib/obras";
 import {
   KIND_LABEL,
@@ -40,6 +40,7 @@ function AdminPage() {
   const { data } = d;
   const [entryOpen, setEntryOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [editMonth, setEditMonth] = useState<string | null>(null);
   const thisMonth = new Date().toISOString().slice(0, 7);
 
   return (
@@ -58,32 +59,137 @@ function AdminPage() {
           </div>
         </header>
 
-        <Tabs defaultValue="notas">
-          <TabsList>
+        <Tabs defaultValue="meses">
+          <TabsList className="flex h-auto flex-wrap">
+            <TabsTrigger value="meses"><CalendarDays className="size-4" /> Meses</TabsTrigger>
             <TabsTrigger value="notas"><FileText className="size-4" /> Notas de remessa</TabsTrigger>
             <TabsTrigger value="coletas"><MessageCircle className="size-4" /> Pedidos (WhatsApp)</TabsTrigger>
             <TabsTrigger value="obras"><Building2 className="size-4" /> Obras</TabsTrigger>
+            <TabsTrigger value="criticos"><AlertTriangle className="size-4" /> Itens críticos</TabsTrigger>
+            <TabsTrigger value="config"><Settings className="size-4" /> Backup e dados</TabsTrigger>
           </TabsList>
+          <TabsContent value="meses" className="pt-4">
+            <MesesTab {...d} onEdit={(m) => { setEditMonth(m); setEntryOpen(true); }} />
+          </TabsContent>
           <TabsContent value="notas" className="pt-4"><NotasTab {...d} /></TabsContent>
           <TabsContent value="coletas" className="pt-4"><ColetasTab {...d} /></TabsContent>
           <TabsContent value="obras" className="pt-4"><ObrasTab {...d} /></TabsContent>
+          <TabsContent value="criticos" className="pt-4"><CriticosTab {...d} /></TabsContent>
+          <TabsContent value="config" className="pt-4"><ConfigTab {...d} /></TabsContent>
         </Tabs>
       </div>
 
       <DataEntryDialog
+        key={editMonth ?? "default"}
         open={entryOpen}
-        onOpenChange={setEntryOpen}
+        onOpenChange={(o) => { setEntryOpen(o); if (!o) setEditMonth(null); }}
         records={data.records}
         targets={data.targets}
         stages={data.stages}
         delayReasons={data.delayReasons}
-        initialMonth={data.records[data.records.length - 1]?.month ?? thisMonth}
+        initialMonth={editMonth ?? data.records[data.records.length - 1]?.month ?? thisMonth}
         onSaveRecord={d.upsertRecord}
         onSaveTargets={d.setTargets}
         onSaveFlow={(s, r) => { d.setStages(s); d.setDelayReasons(r); }}
       />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={d.upsertMany} />
     </main>
+  );
+}
+
+function MesesTab({ data, removeRecord, onEdit }: ReturnType<typeof useAlmoxData> & { onEdit: (m: string) => void }) {
+  return (
+    <div className="panel p-5">
+      <h2 className="mb-1 font-display text-lg font-semibold">Fechamentos mensais ({data.records.length})</h2>
+      <p className="mb-3 text-sm text-muted-foreground">Edite qualquer mês (valores, metas e fluxo) ou exclua um fechamento.</p>
+      <ul className="divide-y divide-border/70 text-sm">
+        {[...data.records].reverse().map((r) => (
+          <li key={r.month} className="flex items-center justify-between py-2">
+            <span className="capitalize">{monthLabelLong(r.month)}</span>
+            <span className="flex gap-1">
+              <Button size="sm" variant="secondary" onClick={() => onEdit(r.month)}><PencilLine className="size-3.5" /> Editar</Button>
+              <Button size="icon" variant="ghost" aria-label={`Excluir ${r.month}`} onClick={() => {
+                if (confirm(`Excluir o fechamento de ${monthLabelLong(r.month)}?`)) { removeRecord(r.month); toast.success("Mês excluído."); }
+              }}><Trash2 className="size-4" /></Button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function CriticosTab({ data, setCriticalItems }: ReturnType<typeof useAlmoxData>) {
+  const items = data.criticalItems;
+  const update = (id: string, patch: Partial<CriticalItem>) =>
+    setCriticalItems(items.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  const add = () =>
+    setCriticalItems([...items, { id: `item-${Date.now()}`, code: "", name: "Novo item", kind: "abaixo_minimo", value: 0 }]);
+  return (
+    <div className="panel space-y-4 p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-lg font-semibold">Itens críticos e divergências ({items.length})</h2>
+        <Button onClick={add}><Plus className="size-4" /> Adicionar item</Button>
+      </div>
+      <ul className="divide-y divide-border/70">
+        {items.map((i) => (
+          <li key={i.id} className="grid gap-2 py-2 sm:grid-cols-[7rem_1fr_11rem_8rem_6rem_auto]">
+            <Input aria-label="Código" placeholder="Código" value={i.code} onChange={(e) => update(i.id, { code: e.target.value })} />
+            <Input aria-label="Nome" value={i.name} onChange={(e) => update(i.id, { name: e.target.value })} />
+            <select className="rounded-md border border-border bg-background px-2" value={i.kind}
+              onChange={(e) => update(i.id, { kind: e.target.value as CriticalKind })}>
+              <option value="abaixo_minimo">Abaixo do mínimo</option>
+              <option value="divergencia">Divergência</option>
+            </select>
+            <Input aria-label="Valor (R$)" type="number" value={i.value} onChange={(e) => update(i.id, { value: Number(e.target.value) || 0 })} />
+            <Input aria-label="Quantidade" type="number" placeholder="Qtd" value={i.qty ?? ""} onChange={(e) => update(i.id, { qty: Number(e.target.value) || 0 })} />
+            <Button variant="ghost" size="icon" aria-label={`Remover ${i.name}`} onClick={() => setCriticalItems(items.filter((x) => x.id !== i.id))}>
+              <Trash2 className="size-4" />
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const BACKUP_KEY = "almoxarifado-kpis-v1";
+
+function ConfigTab({ data, reset }: ReturnType<typeof useAlmoxData>) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const exportBackup = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup-almoxarifado-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  const importBackup = async (f?: File) => {
+    if (!f) return;
+    try {
+      const parsed = JSON.parse(await f.text());
+      if (!parsed?.records?.length) throw new Error();
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(parsed));
+      toast.success("Backup restaurado. Recarregando…");
+      setTimeout(() => location.reload(), 600);
+    } catch {
+      toast.error("Arquivo de backup inválido.");
+    }
+  };
+  return (
+    <div className="panel space-y-4 p-5">
+      <h2 className="font-display text-lg font-semibold">Backup e dados</h2>
+      <p className="text-sm text-muted-foreground">Salve uma cópia de tudo (meses, metas, obras, notas, pedidos, itens críticos) ou restaure de um backup.</p>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={exportBackup}><Download className="size-4" /> Baixar backup</Button>
+        <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={(e) => importBackup(e.target.files?.[0])} />
+        <Button variant="secondary" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Restaurar backup</Button>
+        <Button variant="destructive" onClick={() => {
+          if (confirm("Apagar tudo e voltar aos dados de exemplo?")) { reset(); toast.success("Dados restaurados para o exemplo."); }
+        }}><RotateCcw className="size-4" /> Restaurar dados de exemplo</Button>
+      </div>
+    </div>
   );
 }
 
@@ -109,7 +215,6 @@ function NotasTab({ data, addMovements, clearMovements, updateMovement }: D) {
 
   const ranking = rankObras(data.obras, data.movements, month).filter((r) => r.total > 0);
   const monthMoves = data.movements.filter((m) => m.month === month);
-  const obraName = (id: string | null) => (id ? data.obras.find((o) => o.id === id)?.name ?? "—" : "Drilling");
 
   return (
     <div className="space-y-4">
