@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { AlertsPanel } from "@/components/almox/AlertsPanel";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -302,6 +303,8 @@ function Dashboard() {
             </Button>
           </div>
         </header>
+
+        <AlertsPanel data={data} rec={current} />
 
         <section className="panel flex flex-wrap items-center gap-4 p-4 text-sm">
           <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
