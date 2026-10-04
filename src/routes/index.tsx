@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { AlertsPanel } from "@/components/almox/AlertsPanel";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
