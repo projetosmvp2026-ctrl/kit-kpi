@@ -45,8 +45,13 @@ export function ObraMovementChart({ ranking, subtitle }: { ranking: ObraRank[]; 
       )}
       {rows.length > 0 && (
         <div className="mt-6 overflow-x-auto">
-          <div className="mb-3 grid grid-cols-3 gap-4 text-sm">
-            {[["Custo total de envio", tot.cost], ["Transporte próprio", tot.own], ["Transporte terceiro", tot.third]].map(([l, v]) => (
+          <div className="mb-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+            <div>
+              <p className="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">Obra que mais movimentou</p>
+              <p className="font-display text-lg font-light leading-tight">{rows[0]?.obra.name}</p>
+              <p className="tabular text-xs text-muted-foreground">{rows[0]?.total} mov. · frete {brl(rows[0]?.cost ?? 0)}</p>
+            </div>
+            {[["Frete total", tot.cost], ["Frete próprio", tot.own], ["Frete terceiro", tot.third]].map(([l, v]) => (
               <div key={l as string}>
                 <p className="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">{l}</p>
                 <p className="tabular font-display text-2xl font-light">{brl(v as number)}</p>
