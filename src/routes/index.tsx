@@ -303,6 +303,8 @@ function Dashboard() {
           </div>
         </header>
 
+        <AlertsPanel data={data} rec={current} />
+
         <section className="panel flex flex-wrap items-center gap-4 p-4 text-sm">
           <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             Farol do mês
