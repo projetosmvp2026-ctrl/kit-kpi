@@ -15,6 +15,7 @@ import {
 } from "@/lib/almox";
 import { DEFAULT_OBRAS, type Movement, type Obra, type PurchaseOrder } from "@/lib/obras";
 import { emptyRecord } from "@/lib/almox";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "almoxarifado-kpis-v1";
 
@@ -40,16 +41,35 @@ export function useAlmoxData() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const next = hydrate(raw);
-        if (next) setData(next);
+    let alive = true;
+    (async () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const next = hydrate(raw);
+          if (next && alive) setData(next);
+        }
+      } catch {
+        /* ignora */
       }
-    } catch {
-      /* ignora armazenamento indisponível */
-    }
-    setHydrated(true);
+      try {
+        const { data: row } = await supabase
+          .from("almox_state")
+          .select("data")
+          .eq("id", "main")
+          .maybeSingle();
+        if (row?.data && alive) {
+          const next = hydrate(JSON.stringify(row.data));
+          if (next) setData(next);
+        }
+      } catch {
+        /* nuvem indisponível: segue com dados locais */
+      }
+      if (alive) setHydrated(true);
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -57,8 +77,17 @@ export function useAlmoxData() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
-      /* ignora armazenamento indisponível */
+      /* ignora */
     }
+    const t = setTimeout(() => {
+      void supabase
+        .from("almox_state")
+        .upsert({ id: "main", data: data as never, updated_at: new Date().toISOString() })
+        .then(({ error }) => {
+          if (error) console.error("Falha ao salvar na nuvem", error);
+        });
+    }, 800);
+    return () => clearTimeout(t);
   }, [data, hydrated]);
 
   const upsertRecord = useCallback((record: MonthlyRecord) => {
