@@ -19,6 +19,8 @@ import {
   monthLabel,
   parseCsv,
 } from "@/lib/almox";
+import { pdfToText, spreadsheetToCsv } from "@/lib/file-readers";
+import { pdfTextToCsv } from "@/lib/import.functions";
 
 interface Props {
   open: boolean;
@@ -44,10 +46,28 @@ export function ImportDialog({ open, onOpenChange, onImport }: Props) {
     setPreview(res.records);
   };
 
+  const [busy, setBusy] = useState(false);
   const onFile = async (file?: File) => {
     if (!file) return;
-    const content = await file.text();
-    analyse(content);
+    setBusy(true);
+    try {
+      if (/\.(xlsx|xls|ods)$/i.test(file.name)) {
+        analyse(await spreadsheetToCsv(file));
+      } else if (/\.pdf$/i.test(file.name)) {
+        const text = await pdfToText(file);
+        if (!text.trim()) throw new Error("PDF sem texto legível.");
+        const { csv } = await pdfTextToCsv({ data: { text, header: CSV_HEADER } });
+        analyse(csv);
+        toast.info("PDF lido. Confira os valores antes de importar.");
+      } else {
+        analyse(await file.text());
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível ler o arquivo.");
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const confirm = () => {
@@ -67,9 +87,9 @@ export function ImportDialog({ open, onOpenChange, onImport }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display">Importar planilha (CSV)</DialogTitle>
+          <DialogTitle className="font-display">Importar dados (modelo, Excel ou PDF)</DialogTitle>
           <DialogDescription>
-            Uma linha por mês, separada por ponto e vírgula. Meses já existentes são substituídos.
+            Use o modelo, envie uma planilha Excel ou um PDF de relatório. Meses já existentes são substituídos.
           </DialogDescription>
         </DialogHeader>
 
@@ -83,12 +103,12 @@ export function ImportDialog({ open, onOpenChange, onImport }: Props) {
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,text/csv,text/plain"
+              accept=".csv,.txt,.xlsx,.xls,.ods,.pdf"
               className="hidden"
               onChange={(e) => onFile(e.target.files?.[0])}
             />
             <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-              <Upload className="size-4" /> Selecionar arquivo
+              <Upload className="size-4" /> {busy ? "Lendo..." : "Enviar CSV, Excel ou PDF"}
             </Button>
             <Button
               variant="ghost"
