@@ -87,9 +87,9 @@ export function ImportDialog({ open, onOpenChange, onImport }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display">Importar planilha (CSV)</DialogTitle>
+          <DialogTitle className="font-display">Importar dados (modelo, Excel ou PDF)</DialogTitle>
           <DialogDescription>
-            Uma linha por mês, separada por ponto e vírgula. Meses já existentes são substituídos.
+            Use o modelo, envie uma planilha Excel ou um PDF de relatório. Meses já existentes são substituídos.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,12 +103,12 @@ export function ImportDialog({ open, onOpenChange, onImport }: Props) {
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,text/csv,text/plain"
+              accept=".csv,.txt,.xlsx,.xls,.ods,.pdf"
               className="hidden"
               onChange={(e) => onFile(e.target.files?.[0])}
             />
             <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-              <Upload className="size-4" /> Selecionar arquivo
+              <Upload className="size-4" /> {busy ? "Lendo..." : "Enviar CSV, Excel ou PDF"}
             </Button>
             <Button
               variant="ghost"
