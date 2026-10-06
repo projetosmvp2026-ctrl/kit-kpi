@@ -44,10 +44,28 @@ export function ImportDialog({ open, onOpenChange, onImport }: Props) {
     setPreview(res.records);
   };
 
+  const [busy, setBusy] = useState(false);
   const onFile = async (file?: File) => {
     if (!file) return;
-    const content = await file.text();
-    analyse(content);
+    setBusy(true);
+    try {
+      if (/\.(xlsx|xls|ods)$/i.test(file.name)) {
+        analyse(await spreadsheetToCsv(file));
+      } else if (/\.pdf$/i.test(file.name)) {
+        const text = await pdfToText(file);
+        if (!text.trim()) throw new Error("PDF sem texto legível.");
+        const { csv } = await pdfTextToCsv({ data: { text, header: CSV_HEADER } });
+        analyse(csv);
+        toast.info("PDF lido. Confira os valores antes de importar.");
+      } else {
+        analyse(await file.text());
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível ler o arquivo.");
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const confirm = () => {
