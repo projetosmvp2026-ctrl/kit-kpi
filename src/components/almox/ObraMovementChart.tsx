@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { KIND_LABEL, transportOf, type Movement, type Obra, type ObraRank, type TransportType } from "@/lib/obras";
@@ -79,7 +79,7 @@ export function ObraMovementChart({ ranking, subtitle, movements = [], obras = [
                 const isOpen = open === r.obra.id;
                 const nfs = movements.filter((m) => m.originId === r.obra.id || m.destId === r.obra.id);
                 return (
-                  <>
+                  <Fragment key={r.obra.id}>
                     <tr key={r.obra.id} className="cursor-pointer border-t border-border/60 hover:bg-surface-2/40" onClick={() => setOpen(isOpen ? null : r.obra.id)}>
                       <td className="py-2">
                         {isOpen ? <ChevronDown className="mr-1 inline h-3 w-3" /> : <ChevronRight className="mr-1 inline h-3 w-3" />}
@@ -123,7 +123,7 @@ export function ObraMovementChart({ ranking, subtitle, movements = [], obras = [
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
