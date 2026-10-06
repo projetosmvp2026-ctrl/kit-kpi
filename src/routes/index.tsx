@@ -90,6 +90,7 @@ function Dashboard() {
     setStages,
     setDelayReasons,
     reset,
+    updateMovement,
   } = useAlmoxData();
   const [month, setMonth] = useState<string>("");
   const [entryOpen, setEntryOpen] = useState(false);
@@ -393,6 +394,9 @@ function Dashboard() {
             <div className="xl:col-span-2">
               <ObraMovementChart
                 ranking={rankObras(data.obras, data.movements, current.month)}
+                movements={data.movements.filter((m) => m.month === current.month)}
+                obras={data.obras}
+                onUpdate={updateMovement}
                 subtitle={`Notas de remessa de ${monthLabelLong(current.month)} — obras com mais movimentações`}
               />
             </div>
