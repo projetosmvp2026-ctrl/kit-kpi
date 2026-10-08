@@ -229,13 +229,20 @@ export function rankObras(obras: Obra[], movements: Movement[], month?: MonthKey
 export function parseWhatsappChat(text: string): PurchaseOrder[] {
   const lineRe = /^(\d{2})\/(\d{2})\/(\d{4}),? (\d{2}):(\d{2}) - ([^:]+): (.*)$/;
   const pcRe = /\bPC\s*(\d{3,6})\s+(.+?)(?:\s*\(([^)]*)\))?\s*\.pdf/i;
+  const urgRe = /URGENT|URGENCIA|EMERGENC|PRIORIDADE|PRIORITARIO|IMEDIAT|PRA HOJE|PARA HOJE|HOJE AINDA|SOS|CRITICO|PARADA|PARADO/;
   const map = new Map<string, PurchaseOrder>();
   let last: PurchaseOrder | null = null;
+  let pendingUrgent = false; // "urgente" dito logo antes do PC
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.replace(/[\u200e\u200f\u2068\u2069]/g, "");
     const m = line.match(lineRe);
-    if (!m) continue;
+    if (!m) {
+      // continuação de mensagem em várias linhas
+      if (last && urgRe.test(norm(line))) last.urgent = true;
+      continue;
+    }
     const [, dd, mm, yyyy, , , sender, msg = ""] = m;
+    const isUrg = urgRe.test(norm(msg));
     const pc = msg.match(pcRe);
     if (pc) {
       const number = pc[1] ?? "";
@@ -247,13 +254,17 @@ export function parseWhatsappChat(text: string): PurchaseOrder[] {
           date: `${yyyy}-${mm}-${dd}`,
           month: `${yyyy}-${mm}`,
           sender: (sender ?? "").trim(),
-          urgent: false,
+          urgent: isUrg || pendingUrgent,
         };
         map.set(number, po);
         last = po;
-      }
-    } else if (last && /URGENT|EMERGENC/i.test(norm(msg))) {
-      last.urgent = true;
+      } else if (isUrg) map.get(number)!.urgent = true;
+      pendingUrgent = false;
+    } else if (isUrg) {
+      if (last) last.urgent = true;
+      pendingUrgent = true;
+    } else {
+      pendingUrgent = false;
     }
   }
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
