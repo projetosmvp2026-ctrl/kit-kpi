@@ -229,7 +229,7 @@ export function rankObras(obras: Obra[], movements: Movement[], month?: MonthKey
 export function parseWhatsappChat(text: string): PurchaseOrder[] {
   const lineRe = /^(\d{2})\/(\d{2})\/(\d{4}),? (\d{2}):(\d{2}) - ([^:]+): (.*)$/;
   const pcRe = /\bPC\s*(\d{3,6})\s+(.+?)(?:\s*\(([^)]*)\))?\s*\.pdf/i;
-  const urgRe = /URGENT|URGENCIA|EMERGENC|PRIORIDADE|PRIORITARIO|IMEDIAT|PRA HOJE|PARA HOJE|HOJE AINDA|SOS|CRITICO|PARADA|PARADO/;
+  const urgRe = /URGENT|URGENCIA|EMERGENC|PRIORIDADE|PRIORITARIO|IMEDIAT|PRA HOJE|PARA HOJE|HOJE AINDA|CRITICO/;
   const map = new Map<string, PurchaseOrder>();
   let last: PurchaseOrder | null = null;
   let pendingUrgent = false; // "urgente" dito logo antes do PC
