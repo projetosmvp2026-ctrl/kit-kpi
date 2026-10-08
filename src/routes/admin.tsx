@@ -386,7 +386,7 @@ function ColetasTab({ data, addPurchaseOrders }: D) {
         {preview && (
           <div className="space-y-3">
             <div className="rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-success">
-              {preview.length} pedido(s) de compra encontrados · {byMonth(preview).map(([m, n]) => `${monthLabelLong(m)}: ${n}`).join(" · ")}
+              {preview.length} pedido(s) de compra encontrados · {preview.filter((p) => p.urgent).length} urgente(s) · {byMonth(preview).map(([m, n]) => `${monthLabelLong(m)}: ${n}`).join(" · ")}
             </div>
             <div className="max-h-80 overflow-auto rounded-lg border border-border">
               <table className="w-full text-sm">
@@ -400,7 +400,18 @@ function ColetasTab({ data, addPurchaseOrders }: D) {
                       <td className="tabular px-3 py-2">{p.date.split("-").reverse().join("/")}</td>
                       <td className="px-3 py-2">{p.supplier}</td>
                       <td className="px-3 py-2 text-muted-foreground">{p.destination || "—"}</td>
-                      <td className="px-3 py-2">{p.urgent ? "Sim" : "—"}</td>
+                      <td className="px-3 py-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={p.urgent}
+                            onChange={(e) =>
+                              setPreview((l) => l?.map((x) => (x.number === p.number ? { ...x, urgent: e.target.checked } : x)) ?? null)
+                            }
+                          />
+                          <span className={p.urgent ? "text-danger" : "text-muted-foreground"}>{p.urgent ? "Urgente" : "Normal"}</span>
+                        </label>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
